@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { TypewriterEffect } from './TypeWritterEffect'
+import axios from 'axios'
 
 export function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -18,21 +19,26 @@ export function Navbar() {
         try {
             setIsConnecting(true)
 
-            // ЗАглушка от gpt
             if (!window.ethereum) {
                 throw new Error('MetaMask не установлен!')
             }
 
-            // ЗАглушка от gpt
             const accounts = await window.ethereum.request({
                 method: 'eth_requestAccounts'
             })
 
-            setWalletAddress(accounts[0])
+            const address = accounts[0]
+            setWalletAddress(address)
+
+            // Отправляем запрос на Django-бэкенд через axios
+            const response = await axios.get(`http://localhost:8000/api/auth/user/nonce/${address}/`)
+
+            console.log('Ответ от сервера Django:', response.data)
+
             setIsAuthModalOpen(false)
-        } catch (error) {
+        } catch (error: any) {
             console.error('Ошибка подключения:', error)
-            alert(error instanceof Error ? error.message : 'Неизвестная ошибка')
+            alert(error.response?.data?.detail || error.message || 'Неизвестная ошибка')
         } finally {
             setIsConnecting(false)
         }
